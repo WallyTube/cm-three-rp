@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-//import { SelectiveBloomEffect } from 'postprocessing';
+	import { SelectiveBloomEffect } from 'postprocessing';
 
 //
 //    INIT
@@ -56,7 +56,19 @@ window.addEventListener('resize', () => {
 	camera.updateProjectionMatrix();
 })
 
-renderer.setAnimationLoop(() => {
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new EffectPass(camera, new BloomEffect()));
+
+requestAnimationFrame(function render() {
+
 	controls.update();
-	renderer.render(scene, camera);
+	requestAnimationFrame(render);
+	composer.render();
+
 });
+
+// renderer.setAnimationLoop(() => {
+// 	controls.update();
+// 	renderer.render(scene, camera);
+// });
