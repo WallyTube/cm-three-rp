@@ -1,12 +1,10 @@
 import './style.css';
-require('./resources/models/computer.gltf');
-require('./resources/models/computer_glow.gltf');
 import * as THREE from 'three';
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-	import { SelectiveBloomEffect } from 'postprocessing';
+import { SelectiveBloomEffect, EffectComposer, EffectPass, RenderPass, BlendFunction, ShaderPass } from 'postprocessing';
 
 //
 //    INIT
@@ -32,11 +30,30 @@ scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).text
 const controls = new OrbitControls( camera, renderer.domElement );
 
 //
+//		BLOOM EFFECT
+//
+
+const effect = new SelectiveBloomEffect(scene, camera, {
+	blendFunction: BlendFunction.ADD,
+	mipmapBlur: true,
+	luminanceThreshold: 0.7,
+	luminanceSmoothing: 0.3,
+	intensity: 30.0,
+	inverted: false
+});
+
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new EffectPass(camera, effect));
+composer.multisampling = 32;
+
+//
 //    MODEL LOADER
 //
 
 const loader = new GLTFLoader();
 
+let glow;
 loader.load('./resources/models/computer.gltf', function (gltf) {
 		scene.add( gltf.scene );
 	},
@@ -44,7 +61,8 @@ loader.load('./resources/models/computer.gltf', function (gltf) {
 	function ( error ) { console.log( error ); } // error loading
 );
 loader.load('./resources/models/computer_glow.gltf', function (gltf) {
-	  scene.add( gltf.scene );
+		glow = gltf.scene;
+		scene.add( gltf.scene );
   },
   function ( xhr ) {}, // loading
   function ( error ) { console.log( error ); } // error loading
@@ -56,19 +74,18 @@ window.addEventListener('resize', () => {
 	camera.updateProjectionMatrix();
 })
 
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-composer.addPass(new EffectPass(camera, new BloomEffect()));
-
+let counter = 0;
 requestAnimationFrame(function render() {
-
 	controls.update();
-	requestAnimationFrame(render);
 	composer.render();
+	requestAnimationFrame(render);
 
+	counter++;
+	if (counter > 50) counter = 0;
+	if (counter == 50) {
+		if (glow) {
+			effect.selection.toggle(glow);
+			console.log('toggled.');
+		}
+	}
 });
-
-// renderer.setAnimationLoop(() => {
-// 	controls.update();
-// 	renderer.render(scene, camera);
-// });
