@@ -54,13 +54,13 @@ composer.multisampling = 32;
 const loader = new GLTFLoader();
 
 let glow;
-loader.load('https://github.com/WallyTube/cm-three-rp/blob/master/resources/models/computer.gltf?raw=true', function (gltf) {
+loader.load('https://drive.google.com/file/d/1HjA9L8x-N3eVE-pmJzQ2WshrX2-cFOMs/view?usp=sharing', function (gltf) {
 		scene.add( gltf.scene );
 	},
 	function ( xhr ) {}, // loading
 	function ( error ) { console.log( error ); } // error loading
 );
-loader.load('https://github.com/WallyTube/cm-three-rp/raw/master/resources/models/computer_glow.gltf', function (gltf) {
+loader.load('https://drive.google.com/file/d/1T6KVnQOJivjVu4aa7SvM2m8eP2xp-asS/view?usp=sharing', function (gltf) {
 		glow = gltf.scene;
 		scene.add( gltf.scene );
   },
