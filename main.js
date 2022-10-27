@@ -1,11 +1,10 @@
 import './style.css';
 import * as THREE from 'three';
-//import Color from './color.js'
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment';
-import { EffectComposer, RenderPass, ShaderPass, EffectPass } from 'postprocessing';
+import { SelectiveBloomEffect, EffectComposer, EffectPass, RenderPass, BlendFunction, ShaderPass } from 'postprocessing';
 
 //
 //    INIT
@@ -27,16 +26,25 @@ camera.position.z = 235;
 const pmremGenerator = new THREE.PMREMGenerator( renderer );
 scene.environment = pmremGenerator.fromScene( new RoomEnvironment(), 0.04 ).texture;
 
-
-
+// Orbit Controls
 const controls = new OrbitControls( camera, renderer.domElement );
 
 //
 //		BLOOM EFFECT
 //
 
+const effect = new SelectiveBloomEffect(scene, camera, {
+	blendFunction: BlendFunction.ADD,
+	mipmapBlur: true,
+	luminanceThreshold: 0.7,
+	luminanceSmoothing: 0.3,
+	intensity: 30.0,
+	inverted: false
+});
+
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
+composer.addPass(new EffectPass(camera, effect));
 composer.multisampling = 32;
 
 //
@@ -46,7 +54,6 @@ composer.multisampling = 32;
 const loader = new GLTFLoader();
 
 let glow;
-let y;
 loader.load('./resources/models/computer.gltf', function (gltf) {
 		scene.add( gltf.scene );
 	},
@@ -56,47 +63,10 @@ loader.load('./resources/models/computer.gltf', function (gltf) {
 loader.load('./resources/models/computer_glow.gltf', function (gltf) {
 		glow = gltf.scene;
 		scene.add( gltf.scene );
-	},
-	function ( xhr ) {}, // loading
-	function ( error ) { console.log( error ); } // error loading
+  },
+  function ( xhr ) {}, // loading
+  function ( error ) { console.log( error ); } // error loading
 );
-loader.load('./resources/models/y.gltf', function (gltf) {
-	y = gltf.scene;
-	scene.add( gltf.scene );
-	gltf.scene.traverse(o => {
-		if (o.isMesh) o.material = new THREE.MeshStandardMaterial({color: 0xff0000, wireframe: true});
-	});
-	gltf.scene.position.x += 4;
-},
-function ( xhr ) {}, // loading
-function ( error ) { console.log( error ); } // error loading
-);
-loader.load('./resources/models/a.gltf', function (gltf) {
-	y = gltf.scene;
-	scene.add( gltf.scene );
-	gltf.scene.traverse(o => {
-		if (o.isMesh) o.material = new THREE.MeshStandardMaterial({color: 0x00ff00, wireframe: false});
-	});
-	gltf.scene.position.x += 7.5;
-},
-function ( xhr ) {}, // loading
-function ( error ) { console.log( error ); } // error loading
-);
-loader.load('./resources/models/n.gltf', function (gltf) {
-	y = gltf.scene;
-	scene.add( gltf.scene );
-	gltf.scene.traverse(o => {
-		if (o.isMesh) o.material = new THREE.MeshStandardMaterial({color: 0xff0000, wireframe: true});
-	});
-	gltf.scene.position.x += 11.5;
-},
-function ( xhr ) {}, // loading
-function ( error ) { console.log( error ); } // error loading
-);
-
-//
-//		CLOCKING
-//
 
 window.addEventListener('resize', () => {
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -111,7 +81,11 @@ requestAnimationFrame(function render() {
 	requestAnimationFrame(render);
 
 	counter++;
-	y.traverse(o => {
-		if (o.isMesh) o.material = new THREE.MeshStandardMaterial({color: changeHue('0xff0000', counter), wireframe: true});
-	});
+	if (counter > 50) counter = 0;
+	if (counter == 50) {
+		if (glow) {
+			effect.selection.toggle(glow);
+			console.log('toggled.');
+		}
+	}
 });
